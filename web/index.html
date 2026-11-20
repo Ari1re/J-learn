@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J-learn</title>
+<link rel="stylesheet" href="fonts/500.css">
+<link rel="stylesheet" href="fonts/700.css">
+<link rel="stylesheet" href="fonts/900.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d3461">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+/* VOICE: friendly study tool, calm and encouraging
+   IDEA: a study binder with coloured index tabs: one tab per section, N5 to N3
+   PICTURE: big section cards on the menu, each a coloured tab with its kana mark and a progress bar
+   COLOUR and TYPE: indigo ground, white panels, vermilion accent, one colour per section; Zen Maru Gothic
+   LAYOUT: title band, then the menu grid or the active section's working area */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0c1324);--ink:light-dark(#14182a,#eef1f8);--soft:light-dark(#596078,#a3abc2);
+--band:light-dark(#1d3461,#152648);--card:light-dark(#ffffff,#172139);--line:light-dark(#dfe4ef,#2a3654);--chip:light-dark(#eef1f8,#1c2843);--acc:#e63b2e;--ok:light-dark(#1f7a4d,#5fd39a);
+--c-core:light-dark(#d6336c,#ff7aa8);--c-place:light-dark(#1c7ed6,#6cb6ff);--c-join:light-dark(#2b8a3e,#69db7c);--c-end:light-dark(#e8590c,#ffa94d);--c-cmp:light-dark(#7048e8,#b197fc);--c-link:light-dark(#0c8599,#66d9e8)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Zen Maru Gothic","Hiragino Maru Gothic ProN","Noto Sans JP",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(22px,3.5vw,44px) max(5vw,16px)}
+header.band{background:var(--band);color:#fff;padding-bottom:clamp(56px,7vw,84px)}
+.hrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+h1{margin:0;font-size:clamp(30px,5vw,46px);line-height:1.05;font-weight:900;text-wrap:balance}
+header p{margin:8px 0 0;color:#c9d3ec;max-width:62ch}
+header button{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#fff}
+header button[aria-pressed=false]{opacity:.75}
+h2{font-size:24px;line-height:1.2;margin:0 0 6px}
+h3{font-size:18px;margin:16px 0 6px}
+.wrap{max-width:920px;margin:0 auto}
+main.band{padding-top:0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:22px;margin-top:-48px;padding:clamp(16px,3vw,28px);box-shadow:0 18px 40px -24px rgba(10,20,50,.45)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row+.row{margin-top:8px}
+button,select,input{font:inherit;color:inherit;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--chip);padding:0 16px}
+button{cursor:pointer}
+input,select{font-size:16px;background:var(--card)}
+button:focus-visible,input:focus-visible,select:focus-visible,.pt:focus-visible,summary:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.tab{font-weight:700;background:transparent;border-color:transparent}
+.tab[aria-selected=true]{background:var(--acc);color:#fff}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lbl{color:var(--soft);font-size:14px}
+.sp{flex:1}
+.soft{color:var(--soft)}.small{font-size:14px}
+rt{font-size:.5em;font-weight:500;color:var(--soft)}
+.nofuri rt{visibility:hidden}
+mark{background:color-mix(in srgb,var(--acc) 18%,transparent);color:inherit;border-bottom:3px solid var(--acc);border-radius:3px;padding:0 2px}
+.go{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+[hidden]{display:none!important}
+/* menu */
+.menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.sec{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;align-items:center;text-align:left;padding:20px;border-radius:20px;border:1px solid var(--line);border-top:8px solid var(--s);background:var(--card);min-height:150px}
+.sec:hover{background:color-mix(in srgb,var(--s) 7%,var(--card))}
+.sec .k{grid-row:span 3;font-size:56px;font-weight:900;line-height:1;color:var(--s);width:1.2em;text-align:center}
+.sec b{font-size:22px;line-height:1.2}
+.sec span{color:var(--soft);font-size:15px;line-height:1.4}
+.sec .bar{margin-top:6px}
+.s-a{--s:var(--c-end)}.s-k{--s:var(--c-link)}.s-v{--s:var(--c-place)}.s-g{--s:var(--c-cmp)}.s-p{--s:var(--c-core)}.s-m{--s:var(--c-join)}
+.lvls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:20px}
+.lvls div{border-radius:14px;background:var(--chip);padding:12px 14px}
+.lvls b{font-size:20px}
+.bar{height:8px;border-radius:99px;background:var(--chip);overflow:hidden}
+.sec .bar{background:color-mix(in srgb,var(--s) 14%,var(--chip))}
+.bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+/* kana */
+.kt{width:100%;border-collapse:separate;border-spacing:6px;margin-top:8px;table-layout:fixed}
+.kt th{font-size:13px;color:var(--soft);text-align:center;padding:0;border:0;font-weight:700}
+.kt th.rh{width:2.4em}
+.kt td{padding:0;border:0}
+.kc{width:100%;min-height:68px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border-radius:12px;border:2px solid var(--line);background:var(--card);position:relative}
+.kc b{font-size:clamp(22px,5vw,32px);line-height:1.15}
+.kc b small{font-size:.6em;color:var(--soft);margin-left:4px}
+.kc i{font-style:normal;font-size:13px;color:var(--soft)}
+.kc[aria-pressed=true]{border-color:var(--c-link);background:color-mix(in srgb,var(--c-link) 12%,var(--card))}
+.kc.m::after{content:"";position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.combo .kc b{font-size:clamp(20px,4.4vw,28px)}
+.kd{margin-top:16px;border-top:4px solid var(--c-link);border-radius:16px;background:color-mix(in srgb,var(--c-link) 6%,var(--card));padding:18px clamp(14px,3vw,24px)}
+.kd .pair2{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap}
+.kd .pair2 div{text-align:center}
+.kd .pair2 b{display:block;font-size:clamp(64px,14vw,96px);line-height:1;color:var(--c-link)}
+.kd .pair2 span{font-size:13px;color:var(--soft)}
+.kd .ro{font-size:30px;font-weight:900}
+.look{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.look div{border:1px solid var(--line);border-radius:16px;padding:14px}
+.look b{font-size:44px;line-height:1.1;letter-spacing:.15em;color:var(--c-link)}
+.ki{width:min(100%,560px);display:flex;gap:8px;margin-top:14px}
+.ki input{flex:1;font-size:20px;text-align:center}
+@media(max-width:600px){.look{grid-template-columns:minmax(0,1fr)}.kt{border-spacing:4px}.kc{min-height:58px}.kc b small{display:block;margin:0}}
+/* anki */
+.drop{display:grid;place-items:center;text-align:center;gap:8px;border:3px dashed var(--line);border-radius:20px;padding:34px 16px;margin-top:6px;background:var(--chip)}
+.drop.over{border-color:var(--c-end);background:color-mix(in srgb,var(--c-end) 10%,var(--card))}
+.drop b{font-size:20px}
+.drop .k{font-size:44px;font-weight:900;color:var(--c-end);line-height:1}
+.decks{display:grid;gap:12px;margin-top:16px}
+.dk{border:1px solid var(--line);border-left:6px solid var(--c-end);border-radius:16px;padding:14px 16px}
+.dk h3{margin:0;font-size:20px}
+.maps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.maps label{display:grid;gap:2px;font-size:13px;color:var(--soft)}
+.maps select{color:var(--ink)}
+.status{min-height:24px;margin-top:10px}
+.status.err{color:var(--acc)}
+.prev{margin-top:8px;font-size:15px}
+@media(max-width:600px){.maps{grid-template-columns:minmax(0,1fr)}}
+/* cards and quiz */
+.stage{display:grid;justify-items:center;padding:20px 0 6px}
+.card{position:relative;width:min(100%,560px);min-height:290px;border-radius:20px;border:1px solid var(--line);background:
+repeating-linear-gradient(to bottom,transparent 0 37px,var(--line) 37px 38px) 0 70px/100% calc(100% - 90px) no-repeat,var(--card);
+padding:58px 24px 26px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-shadow:0 2px 0 var(--line),0 22px 40px -28px rgba(10,20,50,.6)}
+.card.tap{cursor:pointer}
+.card::before{content:"";position:absolute;top:18px;left:50%;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--bg);border:2px solid var(--line)}
+.card.turn{animation:turn .28s ease}
+@keyframes turn{50%{transform:perspective(900px) rotateX(80deg)}}
+@media (prefers-reduced-motion:reduce){.card.turn,.reveal{animation:none!important}}
+.tl{position:absolute;top:16px;left:18px;font-size:13px;color:var(--soft)}
+.tr{position:absolute;top:16px;right:18px;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;border:1.5px solid var(--acc);color:var(--acc)}
+.jp{font-size:22px;line-height:2;font-weight:700}
+.card .jp{font-size:clamp(34px,7vw,52px);line-height:1.5;overflow-wrap:anywhere}
+.card .jp.long{font-size:clamp(22px,4.4vw,30px)}
+.en{color:var(--soft);font-size:15px}
+.card .en.big{font-size:clamp(22px,4vw,30px);font-weight:700;color:var(--ink);line-height:1.25}
+.nt{margin-top:10px;font-size:15px;color:var(--soft);max-width:46ch}
+.acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:min(100%,560px);margin-top:14px}
+.acts.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.meter{width:min(100%,560px);margin-top:14px;font-size:14px;color:var(--soft)}
+.meter .bar{margin-top:6px}
+.opts{display:grid;gap:10px;width:min(100%,560px);margin-top:14px}
+.opts button{text-align:left;padding:10px 16px;font-size:17px;line-height:1.5}
+.opts.kana{grid-template-columns:repeat(4,minmax(0,1fr))}
+.opts.kana button{text-align:center;font-size:26px;font-weight:900;min-height:60px}
+.opts button.right{background:var(--ok);color:#fff;border-color:var(--ok)}
+.opts button.wrong{background:var(--acc);color:#fff;border-color:var(--acc)}
+.fb{width:min(100%,560px);margin-top:12px;min-height:24px}
+.empty{padding:40px 0;color:var(--soft);text-align:center}
+table{width:100%;border-collapse:collapse;margin-top:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:14px;color:var(--soft);font-weight:500}
+td.j{font-size:20px;font-weight:700}
+.mini{min-height:36px;padding:0 12px;font-size:14px}
+.known{background:var(--ok)!important;color:#fff!important;border-color:var(--ok)!important}
+/* grammar */
+.gl{display:grid;gap:10px;margin-top:14px}
+details{border:1px solid var(--line);border-radius:16px;background:var(--card)}
+details[open]{border-color:var(--c-cmp);background:color-mix(in srgb,var(--c-cmp) 5%,var(--card))}
+summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:14px 16px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary b{font-size:21px;line-height:1.4}
+summary span{color:var(--soft);font-size:15px;grid-column:1}
+summary i{grid-row:1/span 2;grid-column:2;font-style:normal;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;border:1.5px solid var(--c-cmp);color:var(--c-cmp)}
+summary i.ok{border-color:var(--ok);color:var(--ok)}
+.gb{padding:0 16px 16px}
+.box{margin-top:10px;padding:10px 14px;border-radius:12px;background:var(--chip);font-size:15px}
+.exb{margin-top:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+/* particles */
+.c-core{--c:var(--c-core)}.c-place{--c:var(--c-place)}.c-join{--c:var(--c-join)}.c-end{--c:var(--c-end)}.c-cmp{--c:var(--c-cmp)}.c-link{--c:var(--c-link)}
+.pt{color:var(--c);font-weight:900;border-bottom:3px solid var(--c);cursor:pointer;padding:0 1px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 4px;font-size:14px;color:var(--soft)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:12px}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:96px;border-radius:16px;border:2px solid var(--line);background:var(--card);padding:8px 6px;text-align:center}
+.tile b{font-size:34px;line-height:1.1;color:var(--c)}
+.tile i{font-style:normal;font-size:13px;color:var(--soft)}
+.tile[aria-pressed=true]{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,var(--card))}
+.detail{margin-top:18px;border-top:4px solid var(--c);border-radius:16px;background:color-mix(in srgb,var(--c) 6%,var(--card));padding:18px clamp(14px,3vw,24px)}
+.bigp{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.bigp b{font-size:clamp(52px,10vw,72px);line-height:1;color:var(--c)}
+.bigp .ro{font-size:20px;font-weight:700}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:1px 10px;border-radius:999px;border:1.5px solid var(--c,var(--acc));color:var(--c,var(--acc))}
+.ex{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:10px}
+.ex li{padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+.mx{display:grid;gap:16px;margin-top:12px}
+.mxc{border:1px solid var(--line);border-radius:16px;padding:16px}
+.mxc h3{margin-top:0;font-size:22px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.pair div{background:var(--chip);border-radius:12px;padding:10px 12px}
+.bd{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 8px}
+.chunk{display:flex;flex-direction:column;align-items:center;border-radius:14px;border:2px solid var(--c,var(--line));padding:6px 12px 8px;background:color-mix(in srgb,var(--c,transparent) 8%,var(--card))}
+.chunk .jp{font-size:24px}
+.chunk small{font-size:13px;color:var(--soft);font-weight:700}
+.chunk.plain{--c:var(--line)}
+.blank{display:inline-block;min-width:1.8em;border-bottom:3px dashed var(--acc);color:var(--acc)}
+.reveal{animation:pop .25s ease}
+@keyframes pop{from{transform:scale(.97);opacity:.4}}
+footer{color:var(--soft);font-size:14px;text-align:center;padding:0 16px 32px;max-width:70ch;margin:0 auto}
+@media(max-width:600px){.menu{grid-template-columns:minmax(0,1fr)}.sec{min-height:0}.sec .k{font-size:44px}.lvls{grid-template-columns:minmax(0,1fr)}.pair{grid-template-columns:minmax(0,1fr)}.opts.kana{grid-template-columns:repeat(2,minmax(0,1fr))}.acts button{padding:0 8px}.grid{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}.tile{min-height:84px}.tile b{font-size:30px}
+table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:7em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:6.5em;margin-inline-start:-7em;white-space:normal;font-size:13px;font-weight:500;color:var(--soft)}.stack td:empty{display:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="band"><div class="wrap">
+<div class="hrow"><button id="back" hidden>← Menu</button><span class="sp"></span><button id="furi" aria-pressed="true">Furigana on</button></div>
+<h1 id="title">J-learn</h1>
+<p id="sub">Vocabulary, grammar and particles from N5 to N3, plus the words from our chats. Pick a section to start.</p>
+</div></header>
+<main class="band"><div class="wrap"><section class="panel">
+<div id="v-menu"></div>
+<div id="v-deck" hidden></div>
+<div id="v-grammar" hidden></div>
+<div id="v-particles" hidden></div>
+<div id="v-anki" hidden></div>
+<div id="v-kana" hidden></div>
+</section></div></main>
+<footer>Levels are approximate: JLPT publishes no official word or grammar lists. All example sentences are original. Progress is saved in this browser only.</footer>
+
+<script src="data/vocab.js"></script>
+<script src="data/grammar.js"></script>
+<script src="data/particles.js"></script>
+<script src="data/mywords.js"></script>
+<script src="data/kana.js"></script>
+<script src="lib/anki-import.js"></script>
+<script>
+{
+const $=id=>document.getElementById(id);
+const rb=s=>String(s).replace(/\{([^|}]+)\|([^}]+)\}/g,'<ruby>$1<rt>$2</rt></ruby>');
+const plain=s=>String(s).replace(/\{([^|}]+)\|([^}]+)\}/g,'$1').replace(/[\[\]]/g,'');
+const mk=s=>rb(String(s).replace(/\[([^\]]+)\]/g,'<mark>$1</mark>'));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const known=new Proxy({},{get(o,k){if(!o[k])o[k]=new Set(store.get('hub-known-'+k,[]));return o[k]}});
+const saveKnown=k=>store.set('hub-known-'+k,[...known[k]]);
+const LV=['N5','N4','N3'];
+
+/* ---------- data ---------- */
+const VOC=(window.VOCAB||[]).map((r,i)=>({id:'v'+i,jp:r[0],en:r[1],lv:r[2],tag:r[3],nt:'',al:r[4]||''}));
+const MW=window.MW||{W:[],G:[],S:[]};
+const MY=[...MW.W.map((r,i)=>({id:'w'+i,tag:'Words',r})),...MW.G.map((r,i)=>({id:'g'+i,tag:'Grammar',r})),...MW.S.map((r,i)=>({id:'s'+i,tag:'Sentences',r}))]
+ .map(({id,tag,r})=>({id,tag,jp:r[0],ro:r[1],en:r[2],lv:r[3],nt:r[4],al:r[5]||''}));
+const GR=(window.GRAMMAR||[]).map((r,i)=>({id:'gr'+i,p:r[0],en:r[1],form:r[2],nt:r[3],ex:r[4],tr:r[5],lv:r[6]}));
+const PD=window.PD;
+
+/* ---------- routing ---------- */
+const ROUTES={
+ 'kana':{t:'Hiragana & katakana',s:'The two Japanese alphabets. Tap any character to hear it, see its romaji and an example word.'},
+ 'vocab':{t:'Vocabulary',s:'Core words from N5 to N3, sorted by level and topic. Browse, flip cards or quiz yourself.'},
+ 'grammar':{t:'Grammar',s:'Key patterns from N5 to N3, each with how to build it and an example sentence.'},
+ 'particles':{t:'Particles',s:'The little words that mark each word’s job. Tap any coloured particle to learn it.'},
+ 'my-words':{t:'My words',s:'Everything you sent me in chat, as words, patterns and full sentences.'},
+ 'anki':{t:'Anki decks',s:'Drop in your own Anki decks and study them with flashcards, quizzes and furigana.'},
+ 'anki-study':{t:'Anki deck',s:''}
+};
+let furi=store.get('hub-furi',true);
+function applyFuri(){document.body.classList.toggle('nofuri',!furi);$('furi').setAttribute('aria-pressed',furi);$('furi').textContent=furi?'Furigana on':'Furigana off'}
+$('furi').addEventListener('click',()=>{furi=!furi;store.set('hub-furi',furi);applyFuri()});
+$('back').addEventListener('click',()=>{location.hash=location.hash==='#anki-study'?'anki':''});
+function route(){
+  const r=location.hash.slice(1);const R=ROUTES[r];
+  ['menu','deck','grammar','particles','anki','kana'].forEach(v=>$('v-'+v).hidden=true);
+  $('back').hidden=!R;
+  $('title').textContent=R?R.t:'J-learn';
+  $('sub').textContent=R?R.s:'Vocabulary, grammar and particles from N5 to N3, plus the words from our chats. Pick a section to start.';
+  if(!R){$('v-menu').hidden=false;renderMenu()}
+  else if(r==='vocab'){$('v-deck').hidden=false;deck.use(VOCD)}
+  else if(r==='my-words'){$('v-deck').hidden=false;deck.use(MYD)}
+  else if(r==='grammar'){$('v-grammar').hidden=false;gram.render()}
+  else if(r==='anki'){$('v-anki').hidden=false;anki.render()}
+  else if(r==='kana'){$('v-kana').hidden=false;kana.render()}
+  else if(r==='anki-study'){const D=anki.current();if(!D){location.hash='anki';return}$('title').textContent=D.name;$('sub').textContent=`${D.items.length} cards from your Anki deck.`;$('v-deck').hidden=false;deck.use(D)}
+  else {$('v-particles').hidden=false;part.render()}
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+
+/* ---------- menu ---------- */
+function pct(a,b){return b?Math.round(a/b*100):0}
+function renderMenu(){
+  const vk=VOC.filter(x=>known.vocab.has(x.id)).length,gk=GR.filter(x=>known.grammar.has(x.id)).length,mk2=MY.filter(x=>known.my.has(x.id)).length;
+  const sec=(h,c,k,t,d,a,b)=>`<button class="sec ${c}" data-go="${h}"><span class="k">${k}</span><b>${t}</b><span>${d}</span><span class="small">${b?`${a} of ${b} known`:d}</span><div class="bar" style="grid-column:2"><i style="width:${pct(a,b)}%"></i></div></button>`;
+  const lv=LV.map(l=>{const v=VOC.filter(x=>x.lv===l),g=GR.filter(x=>x.lv===l);const k=v.filter(x=>known.vocab.has(x.id)).length+g.filter(x=>known.grammar.has(x.id)).length;return `<div><b>${l}</b> <span class="soft small">${v.length} words · ${g.length} patterns</span><div class="bar" style="margin-top:8px"><i style="width:${pct(k,v.length+g.length)}%"></i></div><span class="soft small">${pct(k,v.length+g.length)}% known</span></div>`}).join('');
+  $('v-menu').innerHTML=`<div class="menu">
+${sec('kana','s-k','あ','Hiragana & katakana',`${kana.total()} characters each: basic, ゛゜ and combinations`,kana.mastered(),kana.total()*2)}
+${sec('vocab','s-v','語','Vocabulary',`${VOC.length} words, N5 to N3`,vk,VOC.length)}
+${sec('grammar','s-g','文','Grammar',`${GR.length} patterns, N5 to N3`,gk,GR.length)}
+${sec('particles','s-p','は','Particles',`${PD.P.length} particles, mix-ups, sentence breakdowns and practice`,0,0)}
+${sec('my-words','s-m','私','My words',`${MY.length} items from our chats`,mk2,MY.length)}
+${sec('anki','s-a','札','Anki decks',anki.decks.length?`${anki.decks.length} deck${anki.decks.length>1?'s':''}, ${anki.decks.reduce((a,d)=>a+d.notes.length,0)} cards`:'Drop in an .apkg deck to study it here',0,0)}
+</div><h3 style="margin-top:24px">Progress by level</h3><div class="lvls" style="margin-top:6px">${lv}</div>`;
+  $('v-menu').querySelector('.sec.s-p .small').textContent='Study each particle, then practise';
+  $('v-menu').querySelector('.sec.s-a .small').textContent=anki.decks.length?'Tap to study or add more':'Supports .apkg, .colpkg, .txt, .tsv, .csv';
+}
+$('v-menu').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)location.hash=b.dataset.go});
+
+/* ---------- deck (vocab + my words) ---------- */
+const VOCD={key:'vocab',items:VOC,tagName:'Topic',st:null};
+const MYD={key:'my',items:MY,tagName:'Type',st:null};
+const deck={
+  d:null,
+  use(d){this.d=d;if(!d.st)d.st={lv:'All',tag:'All',mode:'list',dir:'jp',q:'',order:[],pos:0,flip:false,quiz:null,ok:0,n:0};this.build();this.render()},
+  pool(){const{d}=this,s=d.st;return d.items.filter(x=>(s.lv==='All'||x.lv===s.lv)&&(s.tag==='All'||x.tag===s.tag))},
+  build(){const s=this.d.st;s.order=shuffle(this.pool().slice());s.pos=0;s.flip=false;s.quiz=null},
+  render(){
+    const d=this.d,s=d.st,lvls=['All',...new Set(d.items.map(x=>x.lv))],tags=['All',...new Set(d.items.map(x=>x.tag))];
+    const tab=(v,l)=>`<button class="tab" role="tab" data-act="mode" data-v="${v}" aria-selected="${s.mode===v}">${l}</button>`;
+    $('v-deck').innerHTML=`<div class="row" role="tablist">${tab('list','List')}${tab('cards','Flashcards')}${tab('quiz','Quiz')}</div>
+<div class="row"${lvls.length<=2?' hidden':''}><span class="lbl">Level</span>${lvls.map(l=>`<button class="chip" data-act="lv" data-v="${l}" aria-pressed="${s.lv===l}">${l}</button>`).join('')}</div>
+<div class="row"><span class="lbl"${tags.length<=2?' hidden':''}>${d.tagName}</span><select id="dtag" aria-label="${d.tagName}"${tags.length<=2?' hidden':''}>${tags.map(t=>`<option ${s.tag===t?'selected':''}>${t}</option>`).join('')}</select>
+${s.mode==='list'?`<input id="dq" type="search" placeholder="Search Japanese or English" value="${esc(s.q)}" style="flex:1;min-width:180px">`:`<span class="lbl" style="margin-left:6px">Front</span><button class="chip" data-act="dir" data-v="jp" aria-pressed="${s.dir==='jp'}">日本語</button><button class="chip" data-act="dir" data-v="en" aria-pressed="${s.dir==='en'}">English</button>`}</div>
+<div id="dbody"></div>`;
+    this.body();
+  },
+  body(){
+    const d=this.d,s=d.st,b=$('dbody'),K=known[d.key];
+    if(s.mode==='list'){
+      const q=s.q.trim().toLowerCase();
+      const L=this.pool().filter(x=>!q||plain(x.jp).includes(q)||x.en.toLowerCase().includes(q)||(x.ro||'').toLowerCase().includes(q)||String(x.jp).includes(q));
+      b.innerHTML=L.length?`<table class="stack"><thead><tr><th>Japanese</th><th>Meaning</th><th>Level</th><th>${d.tagName}</th><th>Status</th></tr></thead><tbody>${L.map(x=>`<tr><td class="j">${rb(esc(x.jp))}</td><td>${rb(esc(x.en))}${x.al?`<div class="small"><b>Also:</b> ${rb(esc(x.al.replace(/^Also:\s*/,'')))}</div>`:''}${x.nt?`<div class="soft small">${rb(esc(x.nt))}</div>`:''}</td><td>${x.lv}</td><td>${x.tag}</td><td><button class="mini${K.has(x.id)?' known':''}" data-act="known" data-id="${x.id}">${K.has(x.id)?'Known':'Learning'}</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nothing matches.</div>';
+      return;
+    }
+    if(!s.order.length){b.innerHTML='<div class="empty">No items in this set.</div>';return}
+    const total=this.pool(),kn=total.filter(x=>K.has(x.id)).length;
+    const meter=`<div class="meter">${s.mode==='cards'?`Card ${s.pos+1} of ${s.order.length} · `:''}${kn} of ${total.length} known<div class="bar"><i style="width:${pct(kn,total.length)}%"></i></div></div>`;
+    const jpb=x=>`<div class="jp${plain(x.jp).length>9?' long':''}">${rb(esc(x.jp))}</div>`;
+    if(s.mode==='cards'){
+      const x=s.order[s.pos];
+      let face=!s.flip?(s.dir==='jp'?jpb(x):`<div class="en big">${rb(esc(x.en))}</div>`)+'<div class="soft small" style="margin-top:12px">Tap to flip</div>'
+        :`${jpb(x)}${x.ro?`<div class="soft">${esc(x.ro)}</div>`:''}<div class="en big" style="margin-top:6px">${rb(esc(x.en))}</div>${x.al?`<div class="nt"><b>Also:</b> ${rb(esc(x.al.replace(/^Also:\s*/,'')))}</div>`:''}${x.nt?`<div class="nt">${rb(esc(x.nt))}</div>`:''}`;
+      b.innerHTML=`<div class="stage"><div class="card tap" id="dcard" data-act="flip" tabindex="0" role="button" aria-label="Flip card"><span class="tl">${x.tag}</span><span class="tr">${x.lv}</span>${face}</div>
+<div class="acts"><button data-act="again">← Again</button><button data-act="flip">Flip</button><button class="go" data-act="got">Got it →</button></div>${meter}<div class="soft small" style="margin-top:12px">Keys: space flips, ← again, → got it</div></div>`;
+      return;
+    }
+    if(!s.quiz)this.newQ();
+    const Q=s.quiz;
+    if(!Q){b.innerHTML='<div class="empty">Pick a bigger set for the quiz (at least 4 items).</div>';return}
+    const x=Q.x;
+    b.innerHTML=`<div class="stage"><div class="card"><span class="tl">${x.tag}</span><span class="tr">${x.lv}</span>${s.dir==='jp'?jpb(x)+'<div class="soft small">What does this mean?</div>':`<div class="en big">${rb(esc(x.en))}</div><div class="soft small" style="margin-top:8px">Which Japanese matches?</div>`}</div>
+<div class="opts">${Q.opts.map((o,i)=>`<button data-act="ans" data-i="${i}" class="${Q.done?(o.id===x.id?'right':(i===Q.pick?'wrong':'')):''}">${s.dir==='jp'?rb(esc(o.en)):rb(esc(o.jp))}</button>`).join('')}</div>
+<div class="fb">${Q.done?`<b>${Q.pick!==null&&Q.opts[Q.pick].id===x.id?'Nice, that’s right.':'Not quite.'}</b> ${rb(esc(x.jp))} = ${rb(esc(x.en))}.${x.al?' <b>Also:</b> '+rb(esc(x.al.replace(/^Also:\s*/,''))):''}`:''}</div>
+<div class="acts two"><button data-act="qreset">Reset score</button><button class="go" data-act="qnext">Next question →</button></div>
+<div class="meter">Score: ${s.n?`${s.ok} of ${s.n} (${pct(s.ok,s.n)}%)`:'no answers yet'}</div></div>`;
+  },
+  newQ(){
+    const s=this.d.st,p=this.pool();
+    if(p.length<4){s.quiz=null;return}
+    const x=p[Math.floor(Math.random()*p.length)];
+    const same=shuffle(p.filter(o=>o.id!==x.id&&o.en!==x.en&&o.tag===x.tag));
+    const rest=shuffle(p.filter(o=>o.id!==x.id&&o.en!==x.en&&o.tag!==x.tag));
+    s.quiz={x,opts:shuffle([x,...[...same,...rest].slice(0,3)]),done:false,pick:null};
+  },
+  flipCard(){const s=this.d.st;s.flip=!s.flip;this.body();const c=$('dcard');if(c){c.classList.add('turn')}},
+  advance(ok){const s=this.d.st,K=known[this.d.key],x=s.order[s.pos];if(!x)return;ok?K.add(x.id):K.delete(x.id);saveKnown(this.d.key);s.pos=(s.pos+1)%s.order.length;s.flip=false;this.body()}
+};
+$('v-deck').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b||!deck.d)return;const s=deck.d.st,a=b.dataset.act;
+  if(a==='mode'){s.mode=b.dataset.v;s.quiz=null;deck.render()}
+  else if(a==='lv'){s.lv=b.dataset.v;deck.build();deck.render()}
+  else if(a==='dir'){s.dir=b.dataset.v;s.flip=false;s.quiz=null;deck.render()}
+  else if(a==='known'){const K=known[deck.d.key],id=b.dataset.id;K.has(id)?K.delete(id):K.add(id);saveKnown(deck.d.key);b.classList.toggle('known',K.has(id));b.textContent=K.has(id)?'Known':'Learning'}
+  else if(a==='flip')deck.flipCard();
+  else if(a==='got')deck.advance(true);
+  else if(a==='again')deck.advance(false);
+  else if(a==='ans'){const Q=s.quiz;if(!Q||Q.done)return;Q.done=true;Q.pick=+b.dataset.i;s.n++;if(Q.opts[Q.pick].id===Q.x.id)s.ok++;deck.body()}
+  else if(a==='qnext'){deck.newQ();deck.body()}
+  else if(a==='qreset'){s.ok=0;s.n=0;deck.body()}
+});
+$('v-deck').addEventListener('change',e=>{if(e.target.id==='dtag'){deck.d.st.tag=e.target.value;deck.build();deck.render()}});
+$('v-deck').addEventListener('input',e=>{if(e.target.id==='dq'){deck.d.st.q=e.target.value;deck.body()}});
+document.addEventListener('keydown',e=>{
+  const r=location.hash.slice(1);if((r!=='vocab'&&r!=='my-words')||!deck.d||deck.d.st.mode!=='cards')return;
+  if(e.target.closest('input,select,button:not(#dcard)'))return;
+  if(e.key===' '){e.preventDefault();deck.flipCard()}else if(e.key==='ArrowRight')deck.advance(true);else if(e.key==='ArrowLeft')deck.advance(false);
+});
+
+/* ---------- grammar ---------- */
+const gram={
+  st:{lv:'N5',mode:'browse',open:null,quiz:null,ok:0,n:0},
+  pool(){return GR.filter(x=>this.st.lv==='All'||x.lv===this.st.lv)},
+  render(){
+    const s=this.st;const tab=(v,l)=>`<button class="tab" role="tab" data-act="mode" data-v="${v}" aria-selected="${s.mode===v}">${l}</button>`;
+    $('v-grammar').innerHTML=`<div class="row" role="tablist">${tab('browse','Browse')}${tab('quiz','Quiz')}</div>
+<div class="row"><span class="lbl">Level</span>${['All',...LV].map(l=>`<button class="chip" data-act="lv" data-v="${l}" aria-pressed="${s.lv===l}">${l}</button>`).join('')}</div><div id="gbody"></div>`;
+    this.body();
+  },
+  body(){
+    const s=this.st,b=$('gbody'),K=known.grammar,P=this.pool();
+    if(s.mode==='browse'){
+      const kn=P.filter(x=>K.has(x.id)).length;
+      b.innerHTML=`<p class="soft small" style="margin:12px 0 0">${kn} of ${P.length} marked known. Tap a pattern to open it.</p><div class="gl">${P.map(x=>`<details data-id="${x.id}"${s.open===x.id?' open':''}><summary><b>${rb(x.p)}</b><span>${esc(x.en)}</span><i class="${K.has(x.id)?'ok':''}">${K.has(x.id)?'Known':x.lv}</i></summary>
+<div class="gb"><div class="box"><b>How to build it:</b> ${rb(x.form)}</div><div class="exb"><div class="jp">${mk(x.ex)}</div><div class="en">${esc(x.tr)}</div></div><div class="box"><b>Note:</b> ${rb(x.nt)}</div>
+<div class="row" style="margin-top:10px"><button class="mini${K.has(x.id)?' known':''}" data-act="known" data-id="${x.id}">${K.has(x.id)?'Known':'Mark as known'}</button></div></div></details>`).join('')}</div>`;
+      return;
+    }
+    if(!s.quiz)this.newQ();
+    const Q=s.quiz;if(!Q){b.innerHTML='<div class="empty">Not enough patterns here.</div>';return}
+    const x=Q.x;
+    b.innerHTML=`<div class="stage"><div class="card"><span class="tl">Grammar</span><span class="tr">${x.lv}</span><div class="jp long" style="font-size:clamp(22px,4.6vw,30px)">${mk(x.ex)}</div><div class="soft small" style="margin-top:8px">What does the highlighted pattern mean here?</div></div>
+<div class="opts">${Q.opts.map((o,i)=>`<button data-act="ans" data-i="${i}" class="${Q.done?(o.id===x.id?'right':(i===Q.pick?'wrong':'')):''}">${esc(o.en)}</button>`).join('')}</div>
+<div class="fb">${Q.done?`<b>${Q.opts[Q.pick].id===x.id?'Nice, that’s right.':'Not quite.'}</b> ${rb(x.p)} = ${esc(x.en)}. “${esc(x.tr)}” <span class="soft">Build: ${rb(x.form)}</span>`:''}</div>
+<div class="acts two"><button data-act="qreset">Reset score</button><button class="go" data-act="qnext">Next question →</button></div>
+<div class="meter">Score: ${s.n?`${s.ok} of ${s.n} (${pct(s.ok,s.n)}%)`:'no answers yet'}</div></div>`;
+  },
+  newQ(){const p=this.pool();if(p.length<4){this.st.quiz=null;return}const x=p[Math.floor(Math.random()*p.length)];this.st.quiz={x,opts:shuffle([x,...shuffle(p.filter(o=>o.id!==x.id)).slice(0,3)]),done:false,pick:null}}
+};
+$('v-grammar').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const s=gram.st,a=b.dataset.act;
+  if(a==='mode'){s.mode=b.dataset.v;s.quiz=null;gram.render()}
+  else if(a==='lv'){s.lv=b.dataset.v;s.quiz=null;s.open=null;gram.render()}
+  else if(a==='known'){const id=b.dataset.id,K=known.grammar;K.has(id)?K.delete(id):K.add(id);saveKnown('grammar');s.open=id;gram.body()}
+  else if(a==='ans'){const Q=s.quiz;if(!Q||Q.done)return;Q.done=true;Q.pick=+b.dataset.i;s.n++;if(Q.opts[Q.pick].id===Q.x.id)s.ok++;gram.body()}
+  else if(a==='qnext'){gram.newQ();gram.body()}
+  else if(a==='qreset'){s.ok=0;s.n=0;gram.body()}
+});
+$('v-grammar').addEventListener('toggle',e=>{const d=e.target;if(d.tagName==='DETAILS'&&d.open)gram.st.open=d.dataset.id},true);
+
+/* ---------- particles ---------- */
+const part={
+  st:{m:'learn',sel:'は',bi:0,btr:false,order:[],qi:0,ok:0,n:0,done:false},
+  ptag(p){const x=PD.BY[p];return x?`<span class="pt c-${x.c}" role="button" tabindex="0" data-p="${p}">${p}</span>`:p},
+  hl(s){return rb(String(s).replace(/\[([^\]]+)\]/g,(m,p)=>'\u0000'+p+'\u0001')).replace(/\u0000([^\u0001]+)\u0001/g,(m,p)=>this.ptag(p))},
+  render(){
+    const s=this.st;const tab=(v,l)=>`<button class="tab" role="tab" data-act="m" data-v="${v}" aria-selected="${s.m===v}">${l}</button>`;
+    if(!s.order.length)this.startQuiz(true);
+    $('v-particles').innerHTML=`<div class="row" role="tablist">${tab('learn','Particles')}${tab('mix','Mix-ups')}${tab('bd','Breakdown')}${tab('quiz','Practice')}</div>
+<div class="legend">${Object.entries(PD.CAT).map(([k,v])=>`<span class="c-${k}">${v}</span>`).join('')}</div><div id="pbody"></div>`;
+    this.body();
+  },
+  body(){
+    const s=this.st,b=$('pbody'),hl=t=>this.hl(t);
+    if(s.m==='learn'){
+      const x=PD.BY[s.sel];
+      b.innerHTML=`<div class="grid">${PD.P.map(p=>`<button class="tile c-${p.c}" data-act="sel" data-p="${p.p}" aria-pressed="${p.p===s.sel}"><b>${p.p}</b><i>${p.ro} · ${p.gist}</i></button>`).join('')}</div>
+<div class="detail reveal c-${x.c}" id="pdet"><div class="bigp"><b>${x.p}</b><span class="ro">“${x.ro}”</span><span class="tag">${PD.CAT[x.c]}</span><span class="tag">${x.lv}</span></div>
+<h2 style="margin-top:10px">${x.name}: ${x.gist}</h2><p>${hl(x.ex)}</p>${x.warn?`<div class="box"><b>Reading:</b> ${x.warn}</div>`:''}
+<h3>Examples</h3><ul class="ex">${x.eg.map(e=>`<li><div class="jp">${hl(e[0])}</div><div class="en">${e[1]}</div></li>`).join('')}</ul><div class="box"><b>Tip:</b> ${hl(x.tip)}</div></div>`;
+    }else if(s.m==='mix'){
+      b.innerHTML=`<div class="mx">${PD.MIX.map(m=>`<div class="mxc"><h3>${hl(m.t.replace(/(は|が|に|で|へ|と|や|だけ|しか)/g,'[$1]'))}</h3><p>${hl(m.rule)}</p><div class="pair"><div><div class="jp">${hl(m.a[0])}</div><div class="en">${m.a[1]}</div></div><div><div class="jp">${hl(m.b[0])}</div><div class="en">${m.b[1]}</div></div></div><div class="box"><b>Rule of thumb:</b> ${hl(m.tip)}</div></div>`).join('')}</div>`;
+    }else if(s.m==='bd'){
+      const x=PD.BD[s.bi];
+      b.innerHTML=`<p class="soft" style="margin-top:12px">Each block is one piece of the sentence. The particle at its end tells you that piece’s job.</p><div class="bd">${x.ch.map(([w,p,r])=>{const c=PD.BY[p];return `<div class="chunk${c?' c-'+c.c:' plain'}"><div class="jp">${rb(w)}${p?this.ptag(p):''}</div><small>${r}</small></div>`}).join('')}</div>
+<p class="en">${s.btr?x.en:''}</p><div class="acts" style="margin:0 auto"><button data-act="bprev">← Previous</button><button data-act="btr">${s.btr?'Hide':'Show'} translation</button><button class="go" data-act="bnext">Next →</button></div><p class="soft small" style="text-align:center">Sentence ${s.bi+1} of ${PD.BD.length}</p>`;
+    }else{
+      if(s.qi>=s.order.length){b.innerHTML=`<div class="stage"><div class="card"><div class="en big">All done!</div><div class="soft">You got ${s.ok} of ${s.n}.</div></div><div class="acts two"><button data-act="qreset">Restart</button><button class="go" data-act="m" data-v="learn">Review particles</button></div></div>`;return}
+      const q=PD.Q[s.order[s.qi]];
+      const sent=s.done?rb(q[0]).replace('＿',this.ptag(q[2])):rb(q[0]).replace('＿','<span class="blank">？</span>');
+      b.innerHTML=`<div class="stage"><div class="card"><span class="tl">Pick the particle</span><div class="jp long" style="font-size:clamp(24px,5vw,32px)">${sent}</div><div class="en">${q[1]}</div></div>
+<div class="opts kana">${s.opt.map(o=>`<button data-act="ans" data-o="${o}" class="${s.done?(o===q[2]?'right':(o===s.pick?'wrong':'')):''}">${o}</button>`).join('')}</div>
+<div class="fb">${s.done?`<b>${s.pick===q[2]?'Nice, that’s right.':'Not quite.'}</b> ${hl(q[4])} <span class="soft">Tap the coloured ${this.ptag(q[2])} to review it.</span>`:''}</div>
+<div class="acts two"><button data-act="qreset">Restart</button><button class="go" data-act="qnext">Next →</button></div>
+<div class="meter">Question ${s.qi+1} of ${s.order.length} · Score ${s.ok} of ${s.n}<div class="bar"><i style="width:${pct(s.qi,s.order.length)}%"></i></div></div></div>`;
+    }
+  },
+  startQuiz(silent){const s=this.st;s.order=shuffle(PD.Q.map((_,i)=>i));s.qi=0;s.ok=0;s.n=0;this.prepQ();if(!silent)this.body()},
+  prepQ(){const s=this.st;s.done=false;s.pick=null;const q=PD.Q[s.order[s.qi]];s.opt=q?shuffle(q[3].slice()):[]},
+  open(p){if(!PD.BY[p])return;const s=this.st;s.sel=p;s.m='learn';if(location.hash!=='#particles'){location.hash='particles';return}this.render();const d=$('pdet');if(d)d.scrollIntoView({behavior:'smooth',block:'start'})}
+};
+$('v-particles').addEventListener('click',e=>{
+  const t=e.target.closest('.pt');if(t){part.open(t.dataset.p);return}
+  const b=e.target.closest('[data-act]');if(!b)return;const s=part.st,a=b.dataset.act;
+  if(a==='m'){s.m=b.dataset.v;part.render()}
+  else if(a==='sel'){s.sel=b.dataset.p;part.body();if(innerWidth<700){const d=$('pdet');if(d)d.scrollIntoView({behavior:'smooth',block:'start'})}}
+  else if(a==='bprev'){s.bi=(s.bi-1+PD.BD.length)%PD.BD.length;s.btr=false;part.body()}
+  else if(a==='bnext'){s.bi=(s.bi+1)%PD.BD.length;s.btr=false;part.body()}
+  else if(a==='btr'){s.btr=!s.btr;part.body()}
+  else if(a==='ans'){if(s.done)return;s.done=true;s.pick=b.dataset.o;s.n++;if(s.pick===PD.Q[s.order[s.qi]][2])s.ok++;part.body()}
+  else if(a==='qnext'){if(s.qi<s.order.length){s.qi++;part.prepQ();part.body()}}
+  else if(a==='qreset')part.startQuiz();
+});
+$('v-particles').addEventListener('keydown',e=>{const t=e.target.closest('.pt');if(t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();part.open(t.dataset.p)}});
+
+/* ---------- anki decks ---------- */
+const anki={
+  decks:(()=>{const d=store.get('hub-anki',[]);return Array.isArray(d)?d:[]})(),
+  cur:null,cache:{},saved:true,
+  save(){try{localStorage.setItem('hub-anki',JSON.stringify(this.decks));this.saved=true}catch(e){this.saved=false}},
+  items(d){
+    const{f,r,m}=d.map,isK=t=>/[㐀-鿿々]/.test(t),isKana=t=>/^[぀-ヿー・\s]+$/.test(t);
+    return d.notes.map(n=>{
+      const front=n.f[f]||'',read=r>=0?n.f[r]||'':'',mean=m>=0?n.f[m]||'':'';
+      if(!front)return null;
+      let jp=front,useR=false;
+      if(read&&!front.includes('{')&&isK(front)&&front.length<=12&&isKana(read)){jp=`{${front}|${read}}`;useR=true}
+      const extra=n.f.map((v,i)=>i!==f&&i!==m&&!(i===r&&useR)&&v?(i===r?'Reading: ':'')+v:'').filter(Boolean).join(' · ');
+      return {id:n.id,jp,en:mean||'(no meaning field)',lv:'Anki',tag:n.sub||'All cards',nt:extra.length>260?extra.slice(0,257)+'…':extra,al:''};
+    }).filter(Boolean);
+  },
+  current(){const d=this.decks.find(x=>x.id===this.cur);if(!d)return null;const c=this.cache[d.id];if(c&&c.mapKey===JSON.stringify(d.map))return c;
+    const D={key:'anki-'+d.id,name:d.name,items:this.items(d),tagName:'Subdeck',st:null,mapKey:JSON.stringify(d.map)};this.cache[d.id]=D;return D},
+  status(msg,err){const el=$('astat');if(el){el.textContent=msg;el.className='status'+(err?' err':'')}},
+  async add(files){
+    for(const file of files){
+      this.status(`Reading ${file.name}…`);
+      try{
+        if(/\.(apkg|colpkg)$/i.test(file.name))await this.libs();
+        const got=await window.AnkiImport.parseFile(file);
+        got.forEach(g=>this.decks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:g.name,notetype:g.notetype,fields:g.fields,notes:g.notes,map:g.map}));
+        this.save();this.render();
+        this.status(`Added ${got.reduce((a,g)=>a+g.notes.length,0)} cards from ${file.name}.`+(this.saved?'':' It is too big to keep after you close this page.'),!this.saved);
+      }catch(e){this.status(`Couldn’t read ${file.name}: ${e.message||e}`,true)}
+    }
+  },
+  libs(){
+    if(this._libs)return this._libs;
+    const load=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('could not load '+src));document.head.appendChild(s)});
+    return this._libs=Promise.all([window.JSZip?0:load('lib/jszip.min.js'),window.fzstd?0:load('lib/fzstd.js')]);
+  },
+  render(){
+    const D=this.decks;
+    $('v-anki').innerHTML=`<label class="drop" id="adrop"><span class="k">札</span><b>Drop an Anki deck here</b><span class="soft">or tap to choose a file: .apkg, .colpkg, or a .txt / .tsv / .csv export</span>
+<input type="file" id="afile" accept=".apkg,.colpkg,.txt,.tsv,.csv" multiple hidden></label>
+<div class="status" id="astat" role="status"></div>
+<div class="decks">${D.length?D.map(d=>{const opt=(sel,none)=>(none?`<option value="-1"${sel<0?' selected':''}>None</option>`:'')+d.fields.map((n,i)=>`<option value="${i}"${i===sel?' selected':''}>${esc(n)}</option>`).join('');
+const ex=d.notes[0];return `<div class="dk" data-id="${d.id}"><h3>${esc(d.name)}</h3><div class="soft small">${d.notes.length} cards · note type: ${esc(d.notetype||'')}</div>
+<div class="maps"><label>Front (Japanese)<select data-map="f">${opt(d.map.f)}</select></label><label>Reading<select data-map="r">${opt(d.map.r,1)}</select></label><label>Meaning<select data-map="m">${opt(d.map.m,1)}</select></label></div>
+${ex?`<div class="prev"><span class="soft small">Preview:</span> <b>${rb(esc(ex.f[d.map.f]||''))}</b> ${d.map.m>=0?'→ '+rb(esc(ex.f[d.map.m]||'')):''}</div>`:''}
+<div class="row" style="margin-top:10px"><button class="go" data-act="study">Study this deck →</button><button data-act="del">Delete</button></div></div>`}).join(''):'<p class="soft">No decks yet. Imported decks stay in this browser, ready to study next time.</p>'}</div>
+<p class="soft small" style="margin-top:16px">Pictures and audio aren’t imported, only the text. This is a study copy: reviews here don’t sync back to Anki.</p>`;
+  }
+};
+const av=$('v-anki');
+av.addEventListener('change',e=>{
+  if(e.target.id==='afile'){anki.add([...e.target.files]);e.target.value='';return}
+  const sel=e.target.closest('select[data-map]');if(!sel)return;
+  const d=anki.decks.find(x=>x.id===sel.closest('.dk').dataset.id);d.map[sel.dataset.map]=+sel.value;anki.save();anki.render();
+});
+av.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const card=b.closest('.dk'),id=card&&card.dataset.id;
+  if(b.dataset.act==='study'){anki.cur=id;location.hash='anki-study'}
+  else if(b.dataset.act==='del'){
+    if(b.dataset.sure){anki.decks=anki.decks.filter(x=>x.id!==id);delete anki.cache[id];anki.save();anki.render();anki.status('Deck deleted.')}
+    else{b.dataset.sure='1';b.textContent='Tap again to delete';b.classList.add('go')}
+  }
+});
+['dragenter','dragover'].forEach(t=>av.addEventListener(t,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();const z=$('adrop');if(z)z.classList.add('over')}}));
+['dragleave','drop'].forEach(t=>av.addEventListener(t,e=>{const z=$('adrop');if(z)z.classList.remove('over')}));
+av.addEventListener('drop',e=>{e.preventDefault();const f=[...(e.dataTransfer&&e.dataTransfer.files||[])];if(f.length)anki.add(f)});
+window.addEventListener('dragover',e=>{if(location.hash==='#anki')e.preventDefault()});
+window.addEventListener('drop',e=>{if(location.hash==='#anki'&&!e.target.closest('#v-anki'))e.preventDefault()});
+
+/* ---------- kana ---------- */
+const KD=window.KANA;
+const canSay='speechSynthesis' in window;
+function say(t){try{const u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=.85;const v=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+const kana={
+  st:{tab:'chart',script:'h',set:'basic',showRo:true,sel:null,pScript:'h',pSets:{basic:true,daku:false,combo:false},dir:'k2r',style:'choice',q:null,ok:0,n:0},
+  streak:store.get('hub-kana',{}),
+  total(){return Object.values(KD.ALL).reduce((a,l)=>a+l.filter(Boolean).length,0)},
+  mastered(){return Object.values(this.streak).filter(v=>v>=3).length},
+  isM(ch){return (this.streak[ch]||0)>=3},
+  render(){
+    const s=this.st,tab=(v,l)=>`<button class="tab" role="tab" data-act="tab" data-v="${v}" aria-selected="${s.tab===v}">${l}</button>`;
+    $('v-kana').innerHTML=`<div class="row" role="tablist">${tab('chart','Charts')}${tab('look','Look-alikes')}${tab('prac','Practice')}</div><div id="kbody"></div>`;
+    this.body();
+  },
+  chip(act,v,on,l){return `<button class="chip" data-act="${act}" data-v="${v}" aria-pressed="${on}">${l}</button>`},
+  body(){
+    const s=this.st,b=$('kbody');
+    if(s.tab==='chart'){
+      const list=KD.ALL[s.set],cols=KD.COLS[s.set],head=KD.HEAD[s.set];
+      let rows='';for(let i=0;i<list.length;i+=cols){const r=list.slice(i,i+cols),first=r.find(Boolean);
+        rows+=`<tr><th class="rh">${first?(s.set==='combo'?first.ro.replace(/[auo]$/,''):first.ro.replace(/[aiueo]$/,'')||'–'):''}</th>${r.map(c=>c?`<td><button class="kc${this.isM(c.h)&&this.isM(c.k)?' m':''}" data-act="cell" data-h="${c.h}" aria-pressed="${s.sel&&s.sel.h===c.h}" aria-label="${c.h} ${c.ro}"><b>${s.script==='k'?c.k:c.h}${s.script==='b'?`<small>${c.k}</small>`:''}</b>${s.showRo?`<i>${c.ro}</i>`:''}</button></td>`:'<td></td>').join('')}</tr>`}
+      b.innerHTML=`<div class="row" style="margin-top:8px"><span class="lbl">Show</span>${this.chip('script','h',s.script==='h','Hiragana')}${this.chip('script','k',s.script==='k','Katakana')}${this.chip('script','b',s.script==='b','Both')}<span class="sp"></span>${this.chip('ro','1',s.showRo,'Romaji')}</div>
+<div class="row"><span class="lbl">Chart</span>${this.chip('set','basic',s.set==='basic','Basic')}${this.chip('set','daku',s.set==='daku','゛ ゜ Voiced')}${this.chip('set','combo',s.set==='combo','Combinations')}</div>
+<table class="kt ${s.set}"><thead><tr><th class="rh"></th>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+<p class="soft small">A green dot means you’ve answered it right 3 times in a row in Practice, in both scripts.</p>
+${s.set==='daku'?`<div class="box"><b>How voiced kana work:</b> two small marks (゛, dakuten) make a sound voiced: か ka → が ga, さ sa → ざ za, た ta → だ da, は ha → ば ba. A small circle (゜, handakuten) turns は-row into p: は ha → ぱ pa.</div>`:''}
+${s.set==='combo'?`<div class="box"><b>How combinations work:</b> an い-column kana plus a small ゃ, ゅ or ょ blends into one syllable: き ki + ゃ = きゃ kya. The small one is written about half size.</div><div class="box"><b>Small っ / ッ</b> doubles the next consonant with a tiny pause: きって kitte (stamp), ベッド beddo (bed).</div><div class="box"><b>Long vowel ー</b> (katakana only) stretches the vowel before it: ケーキ kēki (cake), コーヒー kōhī (coffee). Hiragana doubles the vowel instead: おかあさん okāsan.</div>`:''}
+<div id="kdet"></div>`;
+      if(s.sel)this.detail();
+    }else if(s.tab==='look'){
+      b.innerHTML=`<p class="soft" style="margin-top:12px">Pairs that are easy to mix up, and the detail that tells them apart.</p><div class="look">${KD.LOOK.map(r=>`<div><b>${r.slice(0,-1).join(' ')}</b><p style="margin:6px 0 0">${r[r.length-1]}</p></div>`).join('')}</div>`;
+    }else this.prac();
+  },
+  find(h){for(const k in KD.ALL){const c=KD.ALL[k].find(x=>x&&x.h===h);if(c)return c}return null},
+  detail(){
+    const c=this.st.sel,el=$('kdet');if(!el||!c)return;
+    const he=KD.HEX[c.h],ke=KD.KEX[c.k],note=KD.NOTE[c.h];
+    const ex=(w,label)=>w&&w[0]?`<li><div class="jp">${w[0]} ${canSay?`<button class="mini" data-act="say" data-t="${w[0]}">Play</button>`:''}</div><div class="en">${label}: ${w[1]}</div></li>`:'';
+    el.innerHTML=`<div class="kd reveal" id="kdbox"><div class="pair2"><div><b>${c.h}</b><span>hiragana</span></div><div><b>${c.k}</b><span>katakana</span></div><div><div class="ro">${c.ro}</div>${canSay?`<button class="go" data-act="say" data-t="${c.h}">Play sound</button>`:''}</div></div>
+${note?`<div class="box"><b>Note:</b> ${note}</div>`:''}${KD.ALT[c.ro]?`<p class="soft small" style="margin:8px 0 0">Also typed as: ${KD.ALT[c.ro].join(', ')}</p>`:''}
+${he||ke?`<h3>Example words</h3><ul class="ex">${ex(he,'Hiragana')}${ex(ke,'Katakana')}</ul>`:''}</div>`;
+  },
+  pool(){const s=this.st;let L=[];for(const k in s.pSets)if(s.pSets[k])L=L.concat(KD.ALL[k].filter(Boolean));return L},
+  newQ(){
+    const s=this.st,P=this.pool();if(P.length<4){s.q=null;return}
+    const c=P[Math.floor(Math.random()*P.length)],scr=s.pScript==='m'?(Math.random()<.5?'h':'k'):s.pScript;
+    const others=shuffle(P.filter(o=>o.ro!==c.ro)),seen=new Set([c.ro]),d=[];for(const o of others){if(!seen.has(o.ro)){seen.add(o.ro);d.push(o)}if(d.length===3)break}
+    s.q={c,scr,opts:shuffle([c,...d]),done:false,pick:null,typed:''};
+  },
+  check(ok){const s=this.st,q=s.q,ch=q.scr==='h'?q.c.h:q.c.k;q.done=true;s.n++;if(ok){s.ok++;this.streak[ch]=(this.streak[ch]||0)+1}else this.streak[ch]=0;store.set('hub-kana',this.streak);if(canSay)say(q.c.h)},
+  prac(){
+    const s=this.st,b=$('kbody');if(!s.q)this.newQ();const q=s.q;
+    const ctrl=`<div class="row" style="margin-top:8px"><span class="lbl">Script</span>${this.chip('ps','h',s.pScript==='h','Hiragana')}${this.chip('ps','k',s.pScript==='k','Katakana')}${this.chip('ps','m',s.pScript==='m','Mixed')}</div>
+<div class="row"><span class="lbl">Include</span>${this.chip('pset','basic',s.pSets.basic,'Basic')}${this.chip('pset','daku',s.pSets.daku,'゛ ゜ Voiced')}${this.chip('pset','combo',s.pSets.combo,'Combinations')}</div>
+<div class="row"><span class="lbl">Ask</span>${this.chip('dir','k2r',s.dir==='k2r','Kana → romaji')}${this.chip('dir','r2k',s.dir==='r2k','Romaji → kana')}${s.dir==='k2r'?`<span class="lbl" style="margin-left:6px">Answer by</span>${this.chip('style','choice',s.style==='choice','Choosing')}${this.chip('style','type',s.style==='type','Typing')}`:''}</div>`;
+    if(!q){b.innerHTML=ctrl+'<div class="empty">Choose at least one set.</div>';return}
+    const sh=o=>q.scr==='h'?o.h:o.k,right=q.done&&(q.pick===q.c.ro||q.typedOk);
+    const prompt=s.dir==='k2r'?`<div class="jp" style="font-size:clamp(64px,16vw,104px);line-height:1.1">${sh(q.c)}</div><div class="soft small">${q.scr==='h'?'Hiragana':'Katakana'}: how do you read it?</div>`
+      :`<div class="en big" style="font-size:clamp(40px,10vw,64px)">${q.c.ro}</div><div class="soft small">Pick the ${q.scr==='h'?'hiragana':'katakana'}</div>`;
+    let ans;
+    if(s.dir==='k2r'&&s.style==='type')ans=`<form class="ki" id="kform"><input id="kin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the romaji" value="${esc(q.typed)}" ${q.done?'disabled':''} aria-label="Romaji answer"><button class="go" ${q.done?'disabled':''}>Check</button></form>`;
+    else ans=`<div class="opts${s.dir==='r2k'?' kana':''}">${q.opts.map(o=>`<button data-act="kans" data-v="${o.ro}" class="${q.done?(o.ro===q.c.ro?'right':(o.ro===q.pick?'wrong':'')):''}">${s.dir==='k2r'?o.ro:sh(o)}</button>`).join('')}</div>`;
+    const fb=q.done?`<b>${right?'Nice, that’s right.':'Not quite.'}</b> ${q.c.h} / ${q.c.k} = ${q.c.ro}.${KD.NOTE[q.c.h]?' '+KD.NOTE[q.c.h]:''}`:'';
+    b.innerHTML=ctrl+`<div class="stage"><div class="card" style="min-height:240px">${prompt}</div>${ans}<div class="fb">${fb}</div>
+<div class="acts two"><button data-act="kreset">Reset score</button><button class="go" data-act="knext">Next →</button></div>
+<div class="meter">Score: ${s.n?`${s.ok} of ${s.n} (${pct(s.ok,s.n)}%)`:'no answers yet'} · ${this.mastered()} characters mastered</div></div>`;
+    const inp=$('kin');if(inp&&!q.done)inp.focus({preventScroll:true});
+  }
+};
+const kv=$('v-kana');
+kv.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const s=kana.st,a=b.dataset.act,v=b.dataset.v;
+  if(a==='tab'){s.tab=v;kana.render()}
+  else if(a==='script'){s.script=v;kana.body()}
+  else if(a==='ro'){s.showRo=!s.showRo;kana.body()}
+  else if(a==='set'){s.set=v;s.sel=null;kana.body()}
+  else if(a==='cell'){s.sel=kana.find(b.dataset.h);kv.querySelectorAll('.kc').forEach(x=>x.setAttribute('aria-pressed',x===b));kana.detail();if(canSay)say(s.sel.h);if(innerWidth<700){const d=$('kdbox');if(d)d.scrollIntoView({behavior:'smooth',block:'start'})}}
+  else if(a==='say')say(b.dataset.t);
+  else if(a==='ps'){s.pScript=v;s.q=null;kana.prac()}
+  else if(a==='pset'){s.pSets[v]=!s.pSets[v];s.q=null;kana.prac()}
+  else if(a==='dir'){s.dir=v;s.q=null;kana.prac()}
+  else if(a==='style'){s.style=v;s.q=null;kana.prac()}
+  else if(a==='kans'){const q=s.q;if(!q||q.done)return;q.pick=v;kana.check(v===q.c.ro);kana.prac()}
+  else if(a==='knext'){kana.newQ();kana.prac()}
+  else if(a==='kreset'){s.ok=0;s.n=0;kana.prac()}
+});
+kv.addEventListener('submit',e=>{
+  e.preventDefault();const s=kana.st,q=s.q;if(!q||q.done)return;
+  const t=($('kin').value||'').trim().toLowerCase();if(!t)return;
+  q.typed=t;q.typedOk=t===q.c.ro||(KD.ALT[q.c.ro]||[]).includes(t);kana.check(q.typedOk);kana.prac();
+});
+kv.addEventListener('keydown',e=>{if(e.key==='Enter'&&kana.st.tab==='prac'&&kana.st.q&&kana.st.q.done&&!e.target.closest('input')){e.preventDefault();kana.newQ();kana.prac()}});
+
+applyFuri();route();
+// Installed web app: offline support. Skipped inside the desktop/Android app and where service workers are blocked.
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!window.__TAURI_INTERNALS__){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+[package]
+name = "jp-study-hub"
+version = "1.0.0"
+description = "Japanese Study Hub"
+edition = "2021"
+
+[lib]
+name = "jp_study_hub_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "s"
+strip = true
