@@ -49,6 +49,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,.pt:focus-visible,
 .soft{color:var(--soft)}.small{font-size:14px}
 rt{font-size:.5em;font-weight:500;color:var(--soft)}
 .nofuri rt{visibility:hidden}
+.rom{font-size:14px;color:var(--soft);font-weight:500;line-height:1.4;letter-spacing:.01em}
+.card .rom{font-size:17px;margin-top:2px}
+.noromaji .rom{display:none!important}
 mark{background:color-mix(in srgb,var(--acc) 18%,transparent);color:inherit;border-bottom:3px solid var(--acc);border-radius:3px;padding:0 2px}
 .go{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
 [hidden]{display:none!important}
@@ -193,7 +196,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 </head>
 <body>
 <header class="band"><div class="wrap">
-<div class="hrow"><button id="back" hidden>← Menu</button><span class="sp"></span><button id="furi" aria-pressed="true">Furigana on</button></div>
+<div class="hrow"><button id="back" hidden>← Menu</button><span class="sp"></span><button id="roma" aria-pressed="true">Romaji on</button><button id="furi" aria-pressed="true">Furigana on</button></div>
 <h1 id="title">J-learn</h1>
 <p id="sub">Vocabulary, grammar and particles from N5 to N3, plus the words from our chats. Pick a section to start.</p>
 </div></header>
@@ -213,6 +216,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <script src="data/mywords.js"></script>
 <script src="data/kana.js"></script>
 <script src="lib/anki-import.js"></script>
+<script src="lib/romaji.js"></script>
 <script>
 {
 const $=id=>document.getElementById(id);
@@ -246,6 +250,10 @@ const ROUTES={
 };
 let furi=store.get('hub-furi',true);
 function applyFuri(){document.body.classList.toggle('nofuri',!furi);$('furi').setAttribute('aria-pressed',furi);$('furi').textContent=furi?'Furigana on':'Furigana off'}
+let roma=store.get('hub-romaji',true);
+function applyRoma(){document.body.classList.toggle('noromaji',!roma);$('roma').setAttribute('aria-pressed',roma);$('roma').textContent=roma?'Romaji on':'Romaji off'}
+$('roma').addEventListener('click',()=>{roma=!roma;store.set('hub-romaji',roma);applyRoma()});
+const romOf=(m,given)=>{const r=given||(window.toRomaji?window.toRomaji(m):'');return r?`<div class="rom">${esc(r)}</div>`:''};
 $('furi').addEventListener('click',()=>{furi=!furi;store.set('hub-furi',furi);applyFuri()});
 $('back').addEventListener('click',()=>{location.hash=location.hash==='#anki-study'?'anki':''});
 function route(){
@@ -308,17 +316,17 @@ ${s.mode==='list'?`<input id="dq" type="search" placeholder="Search Japanese or 
     if(s.mode==='list'){
       const q=s.q.trim().toLowerCase();
       const L=this.pool().filter(x=>!q||plain(x.jp).includes(q)||x.en.toLowerCase().includes(q)||(x.ro||'').toLowerCase().includes(q)||String(x.jp).includes(q));
-      b.innerHTML=L.length?`<table class="stack"><thead><tr><th>Japanese</th><th>Meaning</th><th>Level</th><th>${d.tagName}</th><th>Status</th></tr></thead><tbody>${L.map(x=>`<tr><td class="j">${rb(esc(x.jp))}</td><td>${rb(esc(x.en))}${x.al?`<div class="small"><b>Also:</b> ${rb(esc(x.al.replace(/^Also:\s*/,'')))}</div>`:''}${x.nt?`<div class="soft small">${rb(esc(x.nt))}</div>`:''}</td><td>${x.lv}</td><td>${x.tag}</td><td><button class="mini${K.has(x.id)?' known':''}" data-act="known" data-id="${x.id}">${K.has(x.id)?'Known':'Learning'}</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nothing matches.</div>';
+      b.innerHTML=L.length?`<table class="stack"><thead><tr><th>Japanese</th><th>Meaning</th><th>Level</th><th>${d.tagName}</th><th>Status</th></tr></thead><tbody>${L.map(x=>`<tr><td class="j">${rb(esc(x.jp))}${romOf(x.jp,x.ro)}</td><td>${rb(esc(x.en))}${x.al?`<div class="small"><b>Also:</b> ${rb(esc(x.al.replace(/^Also:\s*/,'')))}</div>`:''}${x.nt?`<div class="soft small">${rb(esc(x.nt))}</div>`:''}</td><td>${x.lv}</td><td>${x.tag}</td><td><button class="mini${K.has(x.id)?' known':''}" data-act="known" data-id="${x.id}">${K.has(x.id)?'Known':'Learning'}</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nothing matches.</div>';
       return;
     }
     if(!s.order.length){b.innerHTML='<div class="empty">No items in this set.</div>';return}
     const total=this.pool(),kn=total.filter(x=>K.has(x.id)).length;
     const meter=`<div class="meter">${s.mode==='cards'?`Card ${s.pos+1} of ${s.order.length} · `:''}${kn} of ${total.length} known<div class="bar"><i style="width:${pct(kn,total.length)}%"></i></div></div>`;
-    const jpb=x=>`<div class="jp${plain(x.jp).length>9?' long':''}">${rb(esc(x.jp))}</div>`;
+    const jpb=x=>`<div class="jp${plain(x.jp).length>9?' long':''}">${rb(esc(x.jp))}</div>${romOf(x.jp,x.ro)}`;
     if(s.mode==='cards'){
       const x=s.order[s.pos];
       let face=!s.flip?(s.dir==='jp'?jpb(x):`<div class="en big">${rb(esc(x.en))}</div>`)+'<div class="soft small" style="margin-top:12px">Tap to flip</div>'
-        :`${jpb(x)}${x.ro?`<div class="soft">${esc(x.ro)}</div>`:''}<div class="en big" style="margin-top:6px">${rb(esc(x.en))}</div>${x.al?`<div class="nt"><b>Also:</b> ${rb(esc(x.al.replace(/^Also:\s*/,'')))}</div>`:''}${x.nt?`<div class="nt">${rb(esc(x.nt))}</div>`:''}`;
+        :`${jpb(x)}<div class="en big" style="margin-top:6px">${rb(esc(x.en))}</div>${x.al?`<div class="nt"><b>Also:</b> ${rb(esc(x.al.replace(/^Also:\s*/,'')))}</div>`:''}${x.nt?`<div class="nt">${rb(esc(x.nt))}</div>`:''}`;
       b.innerHTML=`<div class="stage"><div class="card tap" id="dcard" data-act="flip" tabindex="0" role="button" aria-label="Flip card"><span class="tl">${x.tag}</span><span class="tr">${x.lv}</span>${face}</div>
 <div class="acts"><button data-act="again">← Again</button><button data-act="flip">Flip</button><button class="go" data-act="got">Got it →</button></div>${meter}<div class="soft small" style="margin-top:12px">Keys: space flips, ← again, → got it</div></div>`;
       return;
@@ -328,7 +336,7 @@ ${s.mode==='list'?`<input id="dq" type="search" placeholder="Search Japanese or 
     if(!Q){b.innerHTML='<div class="empty">Pick a bigger set for the quiz (at least 4 items).</div>';return}
     const x=Q.x;
     b.innerHTML=`<div class="stage"><div class="card"><span class="tl">${x.tag}</span><span class="tr">${x.lv}</span>${s.dir==='jp'?jpb(x)+'<div class="soft small">What does this mean?</div>':`<div class="en big">${rb(esc(x.en))}</div><div class="soft small" style="margin-top:8px">Which Japanese matches?</div>`}</div>
-<div class="opts">${Q.opts.map((o,i)=>`<button data-act="ans" data-i="${i}" class="${Q.done?(o.id===x.id?'right':(i===Q.pick?'wrong':'')):''}">${s.dir==='jp'?rb(esc(o.en)):rb(esc(o.jp))}</button>`).join('')}</div>
+<div class="opts">${Q.opts.map((o,i)=>`<button data-act="ans" data-i="${i}" class="${Q.done?(o.id===x.id?'right':(i===Q.pick?'wrong':'')):''}">${s.dir==='jp'?rb(esc(o.en)):rb(esc(o.jp))+romOf(o.jp,o.ro)}</button>`).join('')}</div>
 <div class="fb">${Q.done?`<b>${Q.pick!==null&&Q.opts[Q.pick].id===x.id?'Nice, that’s right.':'Not quite.'}</b> ${rb(esc(x.jp))} = ${rb(esc(x.en))}.${x.al?' <b>Also:</b> '+rb(esc(x.al.replace(/^Also:\s*/,''))):''}`:''}</div>
 <div class="acts two"><button data-act="qreset">Reset score</button><button class="go" data-act="qnext">Next question →</button></div>
 <div class="meter">Score: ${s.n?`${s.ok} of ${s.n} (${pct(s.ok,s.n)}%)`:'no answers yet'}</div></div>`;
@@ -380,14 +388,14 @@ const gram={
     if(s.mode==='browse'){
       const kn=P.filter(x=>K.has(x.id)).length;
       b.innerHTML=`<p class="soft small" style="margin:12px 0 0">${kn} of ${P.length} marked known. Tap a pattern to open it.</p><div class="gl">${P.map(x=>`<details data-id="${x.id}"${s.open===x.id?' open':''}><summary><b>${rb(x.p)}</b><span>${esc(x.en)}</span><i class="${K.has(x.id)?'ok':''}">${K.has(x.id)?'Known':x.lv}</i></summary>
-<div class="gb"><div class="box"><b>How to build it:</b> ${rb(x.form)}</div><div class="exb"><div class="jp">${mk(x.ex)}</div><div class="en">${esc(x.tr)}</div></div><div class="box"><b>Note:</b> ${rb(x.nt)}</div>
+<div class="gb"><div class="box"><b>How to build it:</b> ${rb(x.form)}</div><div class="exb"><div class="jp">${mk(x.ex)}</div>${romOf(x.ex)}<div class="en">${esc(x.tr)}</div></div><div class="box"><b>Note:</b> ${rb(x.nt)}</div>
 <div class="row" style="margin-top:10px"><button class="mini${K.has(x.id)?' known':''}" data-act="known" data-id="${x.id}">${K.has(x.id)?'Known':'Mark as known'}</button></div></div></details>`).join('')}</div>`;
       return;
     }
     if(!s.quiz)this.newQ();
     const Q=s.quiz;if(!Q){b.innerHTML='<div class="empty">Not enough patterns here.</div>';return}
     const x=Q.x;
-    b.innerHTML=`<div class="stage"><div class="card"><span class="tl">Grammar</span><span class="tr">${x.lv}</span><div class="jp long" style="font-size:clamp(22px,4.6vw,30px)">${mk(x.ex)}</div><div class="soft small" style="margin-top:8px">What does the highlighted pattern mean here?</div></div>
+    b.innerHTML=`<div class="stage"><div class="card"><span class="tl">Grammar</span><span class="tr">${x.lv}</span><div class="jp long" style="font-size:clamp(22px,4.6vw,30px)">${mk(x.ex)}</div>${romOf(x.ex)}<div class="soft small" style="margin-top:8px">What does the highlighted pattern mean here?</div></div>
 <div class="opts">${Q.opts.map((o,i)=>`<button data-act="ans" data-i="${i}" class="${Q.done?(o.id===x.id?'right':(i===Q.pick?'wrong':'')):''}">${esc(o.en)}</button>`).join('')}</div>
 <div class="fb">${Q.done?`<b>${Q.opts[Q.pick].id===x.id?'Nice, that’s right.':'Not quite.'}</b> ${rb(x.p)} = ${esc(x.en)}. “${esc(x.tr)}” <span class="soft">Build: ${rb(x.form)}</span>`:''}</div>
 <div class="acts two"><button data-act="qreset">Reset score</button><button class="go" data-act="qnext">Next question →</button></div>
@@ -422,21 +430,21 @@ const part={
     const s=this.st,b=$('pbody'),hl=t=>this.hl(t);
     if(s.m==='learn'){
       const x=PD.BY[s.sel];
-      b.innerHTML=`<div class="grid">${PD.P.map(p=>`<button class="tile c-${p.c}" data-act="sel" data-p="${p.p}" aria-pressed="${p.p===s.sel}"><b>${p.p}</b><i>${p.ro} · ${p.gist}</i></button>`).join('')}</div>
+      b.innerHTML=`<div class="grid">${PD.P.map(p=>`<button class="tile c-${p.c}" data-act="sel" data-p="${p.p}" aria-pressed="${p.p===s.sel}"><b>${p.p}</b><i><span class="rom" style="font-size:inherit;display:inline">${p.ro} · </span>${p.gist}</i></button>`).join('')}</div>
 <div class="detail reveal c-${x.c}" id="pdet"><div class="bigp"><b>${x.p}</b><span class="ro">“${x.ro}”</span><span class="tag">${PD.CAT[x.c]}</span><span class="tag">${x.lv}</span></div>
 <h2 style="margin-top:10px">${x.name}: ${x.gist}</h2><p>${hl(x.ex)}</p>${x.warn?`<div class="box"><b>Reading:</b> ${x.warn}</div>`:''}
-<h3>Examples</h3><ul class="ex">${x.eg.map(e=>`<li><div class="jp">${hl(e[0])}</div><div class="en">${e[1]}</div></li>`).join('')}</ul><div class="box"><b>Tip:</b> ${hl(x.tip)}</div></div>`;
+<h3>Examples</h3><ul class="ex">${x.eg.map(e=>`<li><div class="jp">${hl(e[0])}</div>${romOf(e[0])}<div class="en">${e[1]}</div></li>`).join('')}</ul><div class="box"><b>Tip:</b> ${hl(x.tip)}</div></div>`;
     }else if(s.m==='mix'){
-      b.innerHTML=`<div class="mx">${PD.MIX.map(m=>`<div class="mxc"><h3>${hl(m.t.replace(/(は|が|に|で|へ|と|や|だけ|しか)/g,'[$1]'))}</h3><p>${hl(m.rule)}</p><div class="pair"><div><div class="jp">${hl(m.a[0])}</div><div class="en">${m.a[1]}</div></div><div><div class="jp">${hl(m.b[0])}</div><div class="en">${m.b[1]}</div></div></div><div class="box"><b>Rule of thumb:</b> ${hl(m.tip)}</div></div>`).join('')}</div>`;
+      b.innerHTML=`<div class="mx">${PD.MIX.map(m=>`<div class="mxc"><h3>${hl(m.t.replace(/(は|が|に|で|へ|と|や|だけ|しか)/g,'[$1]'))}</h3><p>${hl(m.rule)}</p><div class="pair"><div><div class="jp">${hl(m.a[0])}</div>${romOf(m.a[0])}<div class="en">${m.a[1]}</div></div><div><div class="jp">${hl(m.b[0])}</div>${romOf(m.b[0])}<div class="en">${m.b[1]}</div></div></div><div class="box"><b>Rule of thumb:</b> ${hl(m.tip)}</div></div>`).join('')}</div>`;
     }else if(s.m==='bd'){
       const x=PD.BD[s.bi];
-      b.innerHTML=`<p class="soft" style="margin-top:12px">Each block is one piece of the sentence. The particle at its end tells you that piece’s job.</p><div class="bd">${x.ch.map(([w,p,r])=>{const c=PD.BY[p];return `<div class="chunk${c?' c-'+c.c:' plain'}"><div class="jp">${rb(w)}${p?this.ptag(p):''}</div><small>${r}</small></div>`}).join('')}</div>
+      b.innerHTML=`<p class="soft" style="margin-top:12px">Each block is one piece of the sentence. The particle at its end tells you that piece’s job.</p><div class="bd">${x.ch.map(([w,p,r])=>{const c=PD.BY[p];return `<div class="chunk${c?' c-'+c.c:' plain'}"><div class="jp">${rb(w)}${p?this.ptag(p):''}</div>${romOf(w+(p?'['+p+']':''))}<small>${r}</small></div>`}).join('')}</div>
 <p class="en">${s.btr?x.en:''}</p><div class="acts" style="margin:0 auto"><button data-act="bprev">← Previous</button><button data-act="btr">${s.btr?'Hide':'Show'} translation</button><button class="go" data-act="bnext">Next →</button></div><p class="soft small" style="text-align:center">Sentence ${s.bi+1} of ${PD.BD.length}</p>`;
     }else{
       if(s.qi>=s.order.length){b.innerHTML=`<div class="stage"><div class="card"><div class="en big">All done!</div><div class="soft">You got ${s.ok} of ${s.n}.</div></div><div class="acts two"><button data-act="qreset">Restart</button><button class="go" data-act="m" data-v="learn">Review particles</button></div></div>`;return}
       const q=PD.Q[s.order[s.qi]];
       const sent=s.done?rb(q[0]).replace('＿',this.ptag(q[2])):rb(q[0]).replace('＿','<span class="blank">？</span>');
-      b.innerHTML=`<div class="stage"><div class="card"><span class="tl">Pick the particle</span><div class="jp long" style="font-size:clamp(24px,5vw,32px)">${sent}</div><div class="en">${q[1]}</div></div>
+      b.innerHTML=`<div class="stage"><div class="card"><span class="tl">Pick the particle</span><div class="jp long" style="font-size:clamp(24px,5vw,32px)">${sent}</div>${romOf(q[0].replace('＿',s.done?'['+q[2]+']':'＿'))}<div class="en">${q[1]}</div></div>
 <div class="opts kana">${s.opt.map(o=>`<button data-act="ans" data-o="${o}" class="${s.done?(o===q[2]?'right':(o===s.pick?'wrong':'')):''}">${o}</button>`).join('')}</div>
 <div class="fb">${s.done?`<b>${s.pick===q[2]?'Nice, that’s right.':'Not quite.'}</b> ${hl(q[4])} <span class="soft">Tap the coloured ${this.ptag(q[2])} to review it.</span>`:''}</div>
 <div class="acts two"><button data-act="qreset">Restart</button><button class="go" data-act="qnext">Next →</button></div>
@@ -535,7 +543,7 @@ const KD=window.KANA;
 const canSay='speechSynthesis' in window;
 function say(t){try{const u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=.85;const v=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 const kana={
-  st:{tab:'chart',script:'h',set:'basic',showRo:true,sel:null,pScript:'h',pSets:{basic:true,daku:false,combo:false},dir:'k2r',style:'choice',q:null,ok:0,n:0},
+  st:{tab:'chart',script:'h',set:'basic',sel:null,pScript:'h',pSets:{basic:true,daku:false,combo:false},dir:'k2r',style:'choice',q:null,ok:0,n:0},
   streak:store.get('hub-kana',{}),
   total(){return Object.values(KD.ALL).reduce((a,l)=>a+l.filter(Boolean).length,0)},
   mastered(){return Object.values(this.streak).filter(v=>v>=3).length},
@@ -551,8 +559,8 @@ const kana={
     if(s.tab==='chart'){
       const list=KD.ALL[s.set],cols=KD.COLS[s.set],head=KD.HEAD[s.set];
       let rows='';for(let i=0;i<list.length;i+=cols){const r=list.slice(i,i+cols),first=r.find(Boolean);
-        rows+=`<tr><th class="rh">${first?(s.set==='combo'?first.ro.replace(/[auo]$/,''):first.ro.replace(/[aiueo]$/,'')||'–'):''}</th>${r.map(c=>c?`<td><button class="kc${this.isM(c.h)&&this.isM(c.k)?' m':''}" data-act="cell" data-h="${c.h}" aria-pressed="${s.sel&&s.sel.h===c.h}" aria-label="${c.h} ${c.ro}"><b>${s.script==='k'?c.k:c.h}${s.script==='b'?`<small>${c.k}</small>`:''}</b>${s.showRo?`<i>${c.ro}</i>`:''}</button></td>`:'<td></td>').join('')}</tr>`}
-      b.innerHTML=`<div class="row" style="margin-top:8px"><span class="lbl">Show</span>${this.chip('script','h',s.script==='h','Hiragana')}${this.chip('script','k',s.script==='k','Katakana')}${this.chip('script','b',s.script==='b','Both')}<span class="sp"></span>${this.chip('ro','1',s.showRo,'Romaji')}</div>
+        rows+=`<tr><th class="rh">${first?(s.set==='combo'?first.ro.replace(/[auo]$/,''):first.ro.replace(/[aiueo]$/,'')||'–'):''}</th>${r.map(c=>c?`<td><button class="kc${this.isM(c.h)&&this.isM(c.k)?' m':''}" data-act="cell" data-h="${c.h}" aria-pressed="${s.sel&&s.sel.h===c.h}" aria-label="${c.h} ${c.ro}"><b>${s.script==='k'?c.k:c.h}${s.script==='b'?`<small>${c.k}</small>`:''}</b><i class="rom">${c.ro}</i></button></td>`:'<td></td>').join('')}</tr>`}
+      b.innerHTML=`<div class="row" style="margin-top:8px"><span class="lbl">Show</span>${this.chip('script','h',s.script==='h','Hiragana')}${this.chip('script','k',s.script==='k','Katakana')}${this.chip('script','b',s.script==='b','Both')}</div>
 <div class="row"><span class="lbl">Chart</span>${this.chip('set','basic',s.set==='basic','Basic')}${this.chip('set','daku',s.set==='daku','゛ ゜ Voiced')}${this.chip('set','combo',s.set==='combo','Combinations')}</div>
 <table class="kt ${s.set}"><thead><tr><th class="rh"></th>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
 <p class="soft small">A green dot means you’ve answered it right 3 times in a row in Practice, in both scripts.</p>
@@ -605,7 +613,6 @@ kv.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const s=kana.st,a=b.dataset.act,v=b.dataset.v;
   if(a==='tab'){s.tab=v;kana.render()}
   else if(a==='script'){s.script=v;kana.body()}
-  else if(a==='ro'){s.showRo=!s.showRo;kana.body()}
   else if(a==='set'){s.set=v;s.sel=null;kana.body()}
   else if(a==='cell'){s.sel=kana.find(b.dataset.h);kv.querySelectorAll('.kc').forEach(x=>x.setAttribute('aria-pressed',x===b));kana.detail();if(canSay)say(s.sel.h);if(innerWidth<700){const d=$('kdbox');if(d)d.scrollIntoView({behavior:'smooth',block:'start'})}}
   else if(a==='say')say(b.dataset.t);
@@ -624,7 +631,7 @@ kv.addEventListener('submit',e=>{
 });
 kv.addEventListener('keydown',e=>{if(e.key==='Enter'&&kana.st.tab==='prac'&&kana.st.q&&kana.st.q.done&&!e.target.closest('input')){e.preventDefault();kana.newQ();kana.prac()}});
 
-applyFuri();route();
+applyFuri();applyRoma();route();
 // Installed web app: offline support. Skipped inside the desktop/Android app and where service workers are blocked.
 if('serviceWorker' in navigator&&location.protocol==='https:'&&!window.__TAURI_INTERNALS__){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
 }
